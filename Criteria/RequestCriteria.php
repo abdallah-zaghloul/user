@@ -1,9 +1,11 @@
 <?php
 
 namespace Modules\User\Criteria;
-
-use Prettus\Repository\Criteria\RequestCriteria as BaseCriteria;
+use Exception;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Prettus\Repository\Contracts\RepositoryInterface;
+use Prettus\Repository\Criteria\RequestCriteria as BaseCriteria;
 
 /**
  * Class RequestCriteria.
@@ -13,15 +15,42 @@ use Prettus\Repository\Contracts\RepositoryInterface;
 class RequestCriteria extends BaseCriteria
 {
     /**
-     * Apply criteria in query repository
-     *
-     * @param mixed              $model
-     * @param RepositoryInterface $repository
-     *
-     * @return mixed
+     * @return void
      */
-    public function apply($model, RepositoryInterface $repository)
+    protected function hydrateQueryParams(): void
     {
+        collect([
+            config('repository.criteria.params.search', 'search'),
+            config('repository.criteria.params.searchFields', 'searchFields'),
+            config('repository.criteria.params.filter', 'filter'),
+            config('repository.criteria.params.orderBy', 'orderBy'),
+            config('repository.criteria.params.searchJoin', 'searchJoin'),
+        ])->each(fn($param) => $this->hydrateParam($param));
+
+        $sortedByParam = config('repository.criteria.params.sortedBy', 'sortedBy');
+        if (!in_array($this->request->get($sortedByParam), ['asc','desc'])) unset($this->request[$sortedByParam]);
+    }
+
+    /**
+     * @param $paramName
+     * @return void
+     */
+    protected function hydrateParam($paramName): void
+    {
+        $values = explode(';', $this->request->get($paramName));
+        $hydratedValues = ($filtered = collect($values)->filter())->implode(';');
+        $filtered->isNotEmpty() and $this->request->merge([$paramName => $hydratedValues]);
+    }
+
+    /**
+     * @param $model
+     * @param RepositoryInterface $repository
+     * @return Builder|Model|mixed
+     * @throws Exception
+     */
+    public function apply($model, RepositoryInterface $repository): mixed
+    {
+        $this->hydrateQueryParams();
         return parent::apply($model, $repository);
     }
 }

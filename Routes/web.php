@@ -11,40 +11,59 @@
 |
 */
 
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Modules\User\Http\Controllers\ConfirmPasswordController;
-use Modules\User\Http\Controllers\ForgotPasswordController;
-use Modules\User\Http\Controllers\HomeController;
-use Modules\User\Http\Controllers\LoginController;
-use Modules\User\Http\Controllers\RegisterController;
-use Modules\User\Http\Controllers\ResetPasswordController;
-use Modules\User\Http\Controllers\VerificationController;
+use Modules\User\Http\Controllers\Web\ConfirmPasswordController;
+use Modules\User\Http\Controllers\Web\ForgotPasswordController;
+use Modules\User\Http\Controllers\Web\HomeController;
+use Modules\User\Http\Controllers\Web\LoginController;
+use Modules\User\Http\Controllers\Web\RegisterController;
+use Modules\User\Http\Controllers\Web\ResetPasswordController;
+use Modules\User\Http\Controllers\Web\VerificationController;
+use Modules\User\Http\Controllers\Web\WelcomeController;
+
+/* |--------------------------------------------------------------------------
+   | Authentication Routes
+   |--------------------------------------------------------------------------
+   | this override authentication routes of default app web guard
+   | names of routes is the same as the default web auth routes
+*/
+
+
+/* override default web auth routes */
 
 Route::group([
-    'prefix' => 'user',
-    'as' => 'user.',
+    'prefix'=> '/'
+
 ],function (){
+    /* welcome */
+    Route::get('/', WelcomeController::class);
+
     /* home */
-    Route::get('home', [HomeController::class,'index'])->name('home');
+    Route::get('home', [HomeController::class, 'index'])->name('home')->middleware('auth','verified');
 
     /* login */
-    Route::get('login', [LoginController::class,'showLoginForm'])->name('showLoginForm');
-    Route::post('login', [LoginController::class,'login'])->name('login');
-    Route::post('logout', [LoginController::class,'logout'])->name('logout');
+    Route::get('login', [LoginController::class, 'showLoginForm'])->name('login')->middleware('guest');
+    Route::post('login', [LoginController::class, 'login'])->middleware('guest');
+    Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
     /* register */
-    Route::get('register', [RegisterController::class,'showRegistrationForm'])->name('showRegistrationForm');
-    Route::post('register', [RegisterController::class,'register'])->name('register');
+    Route::get('register', [RegisterController::class, 'showRegistrationForm'])->name('register')->middleware('guest');
+    Route::post('register', [RegisterController::class, 'register'])->middleware('guest');
 
     /* password-confirm */
-    Route::get('password/confirm',[ConfirmPasswordController::class,'showConfirmForm'])->name('password.showConfirmForm');
-    Route::post('password/confirm',[ConfirmPasswordController::class,'confirm'])->name('password.confirm');
+    Route::get('password/confirm', [ConfirmPasswordController::class, 'showConfirmForm'])->name('password.confirm')->middleware('auth');
+    Route::post('password/confirm', [ConfirmPasswordController::class, 'confirm'])->middleware('auth');
 
     /* password-forgot */
-    Route::get('password/email',[ForgotPasswordController::class,'sendResetLinkEmail'])->name('password.sendResetLinkEmail');
-    Route::get('password/reset',[ForgotPasswordController::class,'showLinkRequestForm'])->name('password.showLinkRequestForm');
+    Route::post('password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+    Route::get('password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+
     /* password-reset */
-    Route::get('password/reset/{token}',[ResetPasswordController::class,'showResetForm'])->name('password.showResetForm');
-    Route::post('password/reset',[ResetPasswordController::class,'reset'])->name('password.reset');
+    Route::get('password/reset/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+    Route::post('password/reset', [ResetPasswordController::class, 'reset'])->name('password.update');
+
+    /* verify-email */
+    Route::get('email/verify', [VerificationController::class, 'show'])->name('verification.notice')->middleware('auth');
+    Route::get('email/verify/{id}/{hash}', [VerificationController::class, 'verify'])->name('verification.verify')->middleware('auth','signed','throttle:6,1');
+    Route::post('email/verify/resend', [VerificationController::class,'resend'])->name('verification.resend')->middleware('auth','throttle:6,1');
 });

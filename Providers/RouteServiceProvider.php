@@ -5,9 +5,16 @@ namespace Modules\User\Providers;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 
+/**
+ *
+ */
 class RouteServiceProvider extends ServiceProvider
 {
-    public const HOME = 'user/home';
+    /**
+     *
+     */
+    public const HOME = '/home';
+
 
     /**
      * The module namespace to assume when generating URLs to actions.
@@ -16,6 +23,7 @@ class RouteServiceProvider extends ServiceProvider
      */
     protected $moduleNamespace = 'Modules\User\Http\Controllers';
 
+
     /**
      * Called before routes are registered.
      *
@@ -23,10 +31,13 @@ class RouteServiceProvider extends ServiceProvider
      *
      * @return void
      */
+
+
     public function boot()
     {
         parent::boot();
     }
+
 
     /**
      * Define the routes for the application.
@@ -39,6 +50,7 @@ class RouteServiceProvider extends ServiceProvider
 
         $this->mapWebRoutes();
     }
+
 
     /**
      * Define the "web" routes for the application.
@@ -53,6 +65,7 @@ class RouteServiceProvider extends ServiceProvider
             ->namespace($this->moduleNamespace)
             ->group(module_path('User', '/Routes/web.php'));
     }
+
 
     /**
      * Define the "api" routes for the application.

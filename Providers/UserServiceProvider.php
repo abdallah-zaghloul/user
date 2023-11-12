@@ -1,45 +1,127 @@
-<?php
+<?php /** @noinspection PhpUndefinedMethodInspection */
 
 namespace Modules\User\Providers;
-
-use Illuminate\Support\Facades\Config;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Http\Request;
+use Modules\User\Http\Middleware\Authenticate;
+use App\Http\Kernel;
+use Illuminate\Foundation\Http\Kernel as HttpKernel;
+use Modules\User\Http\Middleware\EnsureEmailIsVerified;
+use Modules\User\Http\Middleware\RedirectIfAuthenticated;
+use Modules\User\Models\User;
 
 
+/**
+ *
+ */
 class UserServiceProvider extends ServiceProvider
 {
     /**
      * @var string $moduleName
      */
-    protected $moduleName = 'User';
+    protected string $moduleName = 'User';
 
     /**
      * @var string $moduleNameLower
      */
-    protected $moduleNameLower = 'user';
+    protected string $moduleNameLower = 'user';
 
     /**
      * Boot the application events.
      *
      * @return void
      */
-    public function boot()
+    public function boot(): void
     {
         $this->registerTranslations();
         $this->registerConfig();
         $this->registerViews();
         $this->loadMigrationsFrom(module_path($this->moduleName, 'Database/Migrations'));
+        $this->bootMacros();
+        $this->bootConfigs();
+        $this->bootMiddlewares();
     }
+
+    /**
+     * @return void
+     */
+    public function bootConfigs(): void
+    {
+       $this->overrideAuthenticationConfigs();
+       $this->overrideViewConfigs();
+    }
+
+    /**
+     * @return void
+     */
+    public function overrideAuthenticationConfigs(): void
+    {
+        $authConfig = config('auth');
+        $authConfig['providers']['users'] = ['driver'=> 'eloquent', 'model'=> User::class];
+        $authConfig['guards']['web'] = ['driver'=> 'session', 'provider'=> 'users'];
+        config(['auth' => $authConfig]);
+    }
+
+    /**
+     * @return void
+     */
+    public function overrideViewConfigs(): void
+    {
+        $this->overrideModulesLivewireConfigs();
+        Paginator::useBootstrap();
+        config(['livewire.pagination_theme' => 'bootstrap']);
+    }
+
+    /**
+     * @return void
+     */
+    public function overrideModulesLivewireConfigs(): void
+    {
+        try {
+            $modulesLivewireConfigs = config('modules-livewire');
+            $modulesLivewireConfigs['namespace'] = "Services\\Web\\Components";
+            $modulesLivewireConfigs['view'] = 'Resources/views/components';
+            config(['modules-livewire' => $modulesLivewireConfigs]);
+        }catch (\Exception $e){}
+    }
+
+    /**
+     * @return void
+     */
+    public function bootMacros(): void
+    {
+        Request::macro('getPaginationCount', function() {
+            return match (true){
+                ctype_digit($query = $this->query('paginationCount')) && $query <= 1000 => (int) $query,
+                default => config('repository.pagination.limit', 50)
+            };
+        });
+    }
+
+
+    /**
+     * @return void
+     */
+    public function bootMiddlewares(): void
+    {
+        $this->app['router']->aliasMiddleware('auth', Authenticate::class);
+        $this->app['router']->aliasMiddleware('guest', RedirectIfAuthenticated::class);
+        $this->app['router']->aliasMiddleware('verified', EnsureEmailIsVerified::class);
+    }
+
 
     /**
      * Register the service provider.
      *
      * @return void
      */
-    public function register()
+    public function register(): void
     {
         $this->app->register(RouteServiceProvider::class);
+        $this->app->register(EventServiceProvider::class);
         $this->app->register(RepositoryServiceProvider::class);
+        $this->app->register(LivewireServiceProvider::class);
     }
 
     /**
@@ -47,7 +129,7 @@ class UserServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    protected function registerConfig()
+    protected function registerConfig(): void
     {
         $this->publishes([
             module_path($this->moduleName, 'Config/config.php') => config_path($this->moduleNameLower . '.php'),
@@ -57,19 +139,12 @@ class UserServiceProvider extends ServiceProvider
         );
     }
 
-    protected function overrideGlobalConfigs()
-    {
-        Config::set([
-            'auth.guards'=> [config('auth.guards') + ['user' => [ 'driver' => 'session', 'provider' => 'users']]]
-        ]);
-    }
-
     /**
      * Register views.
      *
      * @return void
      */
-    public function registerViews()
+    public function registerViews(): void
     {
         $viewPath = resource_path('views/modules/' . $this->moduleNameLower);
 
@@ -87,7 +162,7 @@ class UserServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function registerTranslations()
+    public function registerTranslations(): void
     {
         $langPath = resource_path('lang/modules/' . $this->moduleNameLower);
 
@@ -105,11 +180,14 @@ class UserServiceProvider extends ServiceProvider
      *
      * @return array
      */
-    public function provides()
+    public function provides(): array
     {
         return [];
     }
 
+    /**
+     * @return array
+     */
     private function getPublishableViewPaths(): array
     {
         $paths = [];

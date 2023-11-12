@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('user::layouts.app')
 
 @section('content')
 <div class="container">
@@ -14,7 +14,7 @@
                         </div>
                     @endif
 
-                    <form method="POST" action="{{ route('user.password.sendResetLinkEmail') }}">
+                    <form method="POST" action="{{ route('password.email') }}">
                         @csrf
 
                         <div class="row mb-3">

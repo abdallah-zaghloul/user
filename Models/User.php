@@ -1,20 +1,21 @@
 <?php
 namespace Modules\User\Models;
 
+use DateTimeInterface;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Prettus\Repository\Contracts\Transformable;
 use Prettus\Repository\Traits\TransformableTrait;
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 /**
  * Class User.
  *
  * @package namespace Modules\User\Models;
  */
-class User extends Authenticatable implements Transformable
+class User extends Authenticatable implements Transformable, MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable, TransformableTrait;
 
@@ -48,4 +49,14 @@ class User extends Authenticatable implements Transformable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+
+    /**
+     * @param DateTimeInterface $date
+     * @return string
+     */
+    protected function serializeDate(DateTimeInterface $date)
+    {
+        return $date->format('Y-m-d H:i:s');
+    }
 }

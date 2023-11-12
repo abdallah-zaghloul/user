@@ -6,7 +6,6 @@ use Prettus\Repository\Eloquent\BaseRepository;
 use Modules\User\Criteria\RequestCriteria;
 use Modules\User\Repositories\UserRepository;
 use Modules\User\Models\User;
-use Modules\User\Validators\UserValidator;
 
 /**
  * Class UserRepositoryEloquent.
@@ -25,7 +24,7 @@ class UserRepositoryEloquent extends BaseRepository implements UserRepository
         return User::class;
     }
 
-    
+
 
     /**
      * Boot up the repository, pushing criteria
@@ -34,5 +33,5 @@ class UserRepositoryEloquent extends BaseRepository implements UserRepository
     {
         $this->pushCriteria(app(RequestCriteria::class));
     }
-    
+
 }

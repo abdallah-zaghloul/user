@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\User\Http\Controllers;
+namespace Modules\User\Http\Controllers\Web;
 
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\Request;
@@ -14,7 +14,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        return view('user::index');
+
     }
 
     /**
@@ -23,7 +23,7 @@ class UserController extends Controller
      */
     public function create()
     {
-        return view('user::create');
+
     }
 
     /**
@@ -43,7 +43,7 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        return view('user::show');
+
     }
 
     /**
@@ -53,7 +53,7 @@ class UserController extends Controller
      */
     public function edit($id)
     {
-        return view('user::edit');
+
     }
 
     /**
